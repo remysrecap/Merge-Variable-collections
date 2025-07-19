@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    :root {
+      --figma-color-bg: #ffffff;
+      --figma-color-text: #000000;
+      --figma-color-border: rgba(0, 0, 0, 0.1);
+      --figma-color-row-bg: #F5F5F5;
+      --figma-color-row-hover: #EBEBEB;
+      --figma-color-selected: #18A0FB;
+      --figma-color-error: #F24822;
+      --figma-color-error-bg: #FFF1F0;
+      --border-radius: 6px;
+    }
+
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--figma-color-bg);
+      color: var(--figma-color-text);
+      font-size: 11px;
+      line-height: 16px;
+    }
+
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid #E5E5E5;
+      padding: 0 16px;
+      margin-bottom: 16px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      z-index: 1000;
+    }
+
+    .tab {
+      padding: 8px 0;
+      margin-right: 16px;
+      color: rgba(0,0,0,0.5);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .tab.active {
+      font-weight: 500;
+      color: rgba(0,0,0,1);
+    }
+
+    .tab-content {
+      display: none;
+      padding: 0 12px;
+      padding-bottom: 48px;
+      padding-top: 48px;
+      background: linear-gradient(0deg, #FFF 74.93%, #FEFEFE 100%);
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    #about.tab-content {
+      padding-top: 32px; /* Less top padding for the About tab */
+    }
+
+    .about-section {
+      margin-bottom: 16px;
+    }
+
+    .about-section h3 {
+      font-size: 11px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .about-section p {
+      font-size: 11px;
+      line-height: 16px;
+      margin-bottom: 12px;
+      color: rgba(0, 0, 0, 0.8);
+    }
+
+    .input-row {
+      display: flex;
+      align-items: stretch;
+      margin-bottom: 8px;
+      padding: 8px;
+      border-radius: var(--border-radius);
+      background: var(--figma-color-row-bg);
+      transition: background-color 0.1s ease;
+    }
+
+    .input-row:hover {
+      background: var(--figma-color-row-hover);
+    }
+
+    .label {
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      width: 52px;
+      margin-right: 4px;
+    }
+
+    .input-container {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin: -8px 8px -8px 0;
+      padding: 8px 48px 8px 0;
+      border-right: 1.5px solid #FFFFFF;
+    }
+
+    .error {
+      color: var(--figma-color-error);
+      margin: 8px 0;
+      padding: 8px;
+      background: var(--figma-color-error-bg);
+      border-radius: var(--border-radius);
+      display: none;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px;
+      background: var(--figma-color-bg);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid var(--figma-color-border);
+      z-index: 100;
+    }
+
+    button {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 36px;
+      background: var(--figma-color-selected);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover:not(:disabled) {
+      background: #0D8DE3;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+
+    button.loading .spinner {
+      opacity: 1;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    select {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      padding: 0 8px;
+      font-family: inherit;
+      font-size: 11px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    .custom-select {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .select-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.2);
+      display: none;
+      z-index: 1000;
+    }
+
+    .select-options {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: -8px;
+      right: -8px; /* Adjusted to make it less wide */
+      background: white;
+      border: 1px solid var(--figma-color-border);
+      border-radius: 6px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: none;
+      max-height: 200px;
+      overflow-y: scroll; /* Ensure scrollbar is always visible */
+      z-index: 1001;
+    }
+
+    .value-display {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 24px;
+      max-width: calc(100% - 24px); /* Ensure it doesn't truncate too quickly */
+    }
+
+    .info-button svg {
+      width: 10px;
+      height: 10px;
+      color: #8D8D8D;
+    }
+
+    .chevron {
+      color: #8D8D8D;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    #merge:disabled {
+      background: var(--figma-color-selected);
+    }
+
+    .select-option {
+      padding: 8px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .select-option:hover {
+      background: var(--figma-color-row-hover);
+    }
+
+    .select-option.selected {
+      background: var(--figma-color-row-bg);
+    }
+
+    .select-option input[type="checkbox"] {
+      margin: 0;
+    }
+
+    .custom-select.open .select-options,
+    .custom-select.open + .select-overlay {
+      display: block;
+    }
+
+    .info-button {
+      width: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: -8px -8px -8px -8px;
+      padding: 0 4px;
+      color: var(--figma-color-icon);
+      position: relative;
+      z-index: unset;
+    }
+
+    .info-button:hover {
+      background: rgba(0, 0, 0, 0.06);
+      border-radius: 0 6px 6px 0;
+    }
+
+    .info-button svg {
+      width: 10px;
+      height: 10px;
+    }
+
+    .tooltip {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 4px);
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      line-height: 16px;
+      width: 200px;
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .info-button:hover .tooltip {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .selection-text {
+      color: rgba(0, 0, 0, 0.3);
+    }
+
+    .selection-text.has-selections {
+      color: var(--figma-color-text);
+    }
+
+    .right-aligned-content {
+      position: absolute;
+      right: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2;
+    }
+
+    .pill {
+      display: inline-block;
+      background: #E0E0E0; /* Slightly darker grey background */
+      border-radius: 4px; /* Corner radius of 4px */
+      padding: 2px 4px; /* Adjust padding to make it smaller */
+      margin-right: 4px;
+      font-size: 9px; /* Smaller font size */
+      line-height: 14px; /* Adjust line height */
+      max-width: 100px; /* Set a max width */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pill::before {
+      content: attr(data-fullname);
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="tab-bar">
+    <div class="tab active" data-tab="manage">Manage</div>
+    <div class="tab" data-tab="about">About</div>
+  </div>
+
+  <div id="manage" class="tab-content active">
+    <div class="input-row">
+      <div class="label">Merge</div>
+      <div class="input-container custom-select" id="collections-dropdown">
+        <div class="value-display selection-text">Choose 2 Collections</div>
+        <div class="right-aligned-content">
+          <svg class="chevron" width="9" height="6" viewBox="0 0 9 6" fill="none">
+            <path d="M1 1L4.5 4.5L8 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="select-options"></div>
+      </div>
+      <div class="info-button">
+        <svg viewBox="0 0 12 12" fill="none">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M6 12A6 6 0 106 0a6 6 0 000 12zM5.333 5.333v4h1.334v-4H5.333zm0-2.666V4h1.334V2.667H5.333z" fill="currentColor"/>
+        </svg>
+        <div class="tooltip">Select two collections to combine their modes. The collections must have identical variables to be merged.</div>
+      </div>
+    </div>
+    <div class="select-overlay"></div>
+
+    <div class="input-row">
+      <div class="label">Save as</div>
+      <div class="input-container">
+        <div class="value-display">New Collection</div>
+        <select id="saveAs">
+          <option value="new">New Collection</option>
+        </select>
+        <div class="right-aligned-content">
+          <svg class="chevron" width="9" height="6" viewBox="0 0 9 6" fill="none">
+            <path d="M1 1L4.5 4.5L8 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="info-button">
+        <svg viewBox="0 0 12 12" fill="none">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M6 12A6 6 0 106 0a6 6 0 000 12zM5.333 5.333v4h1.334v-4H5.333zm0-2.666V4h1.334V2.667H5.333z" fill="currentColor"/>
+        </svg>
+        <div class="tooltip">Choose to create a new collection or update an existing one with the combined modes.</div>
+      </div>
+    </div>
+
+    <div id="error" class="error"></div>
+
+    <div class="footer">
+      <button id="merge" disabled>
+        <span>Merge Collections</span>
+        <div class="spinner"></div>
+      </button>
+    </div>
+  </div>
+
+  <div id="about" class="tab-content">
+    <div class="about-section">
+      <h3>Merge Variable Collections</h3>
+      <p>Combine two variable collections into one by merging their modes. You can either create a new collection or update an existing one.</p>
+      <p>Collections must have identical variables to be merged. Each collection's modes will be preserved and labeled with their source collection name.</p>
+    </div>
+  </div>
+
+  <script>
+    let collections = [];
+    let selectedCollections = new Set();
+    
+    function truncateMiddle(str, maxLength) {
+      if (str.length <= maxLength) return str;
+      const half = Math.floor(maxLength / 2) - 1;
+      return str.slice(0, half) + '...' + str.slice(-half);
+    }
+
+    function updateSelectionText() {
+      const display = document.querySelector('.selection-text');
+      const selected = Array.from(selectedCollections);
+      
+      if (selected.length === 0) {
+        display.innerHTML = 'Choose 2 Collections';
+        display.classList.remove('has-selections');
+      } else {
+        const totalLength = selected.reduce((acc, id) => acc + collections.find(c => c.id === id).name.length, 0);
+        if (totalLength > 28) {
+          display.innerHTML = `<span class="pill">${selected.length} selected</span>`;
+        } else {
+          display.innerHTML = selected.map(id => {
+            const name = collections.find(c => c.id === id).name;
+            return `<span class="pill" data-fullname="${name}">${truncateMiddle(name, 15)}</span>`;
+          }).join('');
+        }
+        display.classList.add('has-selections');
+      }
+
+      updateSaveAsDropdown();
+      updateMergeButtonState();
+    }
+
+    function updateMergeButtonState() {
+      const mergeBtn = document.getElementById('merge');
+      mergeBtn.disabled = selectedCollections.size !== 2;
+    }
+
+    function updateSaveAsDropdown() {
+      const saveAs = document.getElementById('saveAs');
+      saveAs.innerHTML = '<option value="new">New Collection</option>';
+      
+      Array.from(selectedCollections).forEach(id => {
+        const collection = collections.find(c => c.id === id);
+        if (collection) {
+          saveAs.add(new Option(`Update ${collection.name}`, id));
+        }
+      });
+      
+      updateDropdownDisplay('saveAs');
+    }
+
+    function toggleDropdown(e) {
+      const customSelect = document.querySelector('.custom-select');
+      const overlay = document.querySelector('.select-overlay');
+      
+      if (!e || !e.target.closest('.select-options')) {
+        customSelect.classList.add('open'); // Ensure it stays open
+      }
+    }
+
+    function toggleOption(id) {
+      if (selectedCollections.has(id)) {
+        selectedCollections.delete(id);
+      } else if (selectedCollections.size < 2) {
+        selectedCollections.add(id);
+      }
+      
+      updateSelectionText();
+      renderOptions();
+    }
+
+    function renderOptions() {
+      const optionsContainer = document.querySelector('.select-options');
+      optionsContainer.innerHTML = collections.map(c => `
+        <div class="select-option ${selectedCollections.has(c.id) ? 'selected' : ''}" onclick="toggleOption('${c.id}')">
+          <input type="checkbox" ${selectedCollections.has(c.id) ? 'checked' : ''} />
+          ${c.name}
+        </div>
+      `).join('');
+    }
+
+    function updateDropdownDisplay(selectId) {
+      const select = document.getElementById(selectId);
+      const display = select.parentElement.querySelector('.value-display');
+      display.textContent = select.options[select.selectedIndex].text;
+    }
+
+    function setLoading(isLoading) {
+      const mergeBtn = document.getElementById('merge');
+      mergeBtn.classList.toggle('loading', isLoading);
+      mergeBtn.disabled = isLoading;
+    }
+
+    function showError(message) {
+      const error = document.getElementById('error');
+      error.textContent = message;
+      error.style.display = message ? 'block' : 'none';
+    }
+
+    document.getElementById('collections-dropdown').addEventListener('click', (e) => {
+      const customSelect = e.currentTarget;
+      customSelect.classList.add('open'); // Ensure it stays open
+      e.stopPropagation();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#collections-dropdown')) {
+        document.querySelector('.custom-select').classList.remove('open');
+      }
+    });
+    document.querySelector('.select-overlay').addEventListener('click', toggleDropdown);
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      
+      if (msg.type === 'collections') {
+        collections = msg.collections;
+        renderOptions();
+        updateSelectionText();
+      } else if (msg.type === 'error') {
+        setLoading(false);
+        showError(msg.message);
+      } else if (msg.type === 'success') {
+        setLoading(false);
+        setTimeout(() => {
+          parent.postMessage({ pluginMessage: { type: 'close' } }, '*');
+        }, 1000);
+      }
+    };
+
+    document.getElementById('saveAs').addEventListener('change', () => updateDropdownDisplay('saveAs'));
+
+    document.getElementById('merge').onclick = () => {
+      const selected = Array.from(selectedCollections);
+      const saveAs = document.getElementById('saveAs');
+      
+      if (selected.length !== 2) {
+        showError('Please select exactly 2 collections');
+        return;
+      }
+      
+      setLoading(true);
+      showError('');
+      
+      parent.postMessage({
+        pluginMessage: {
+          type: 'merge-collections',
+          collection1Id: selected[0],
+          collection2Id: selected[1],
+          saveAs: saveAs.value
+        }
+      }, '*');
+    };
+
+    parent.postMessage({ pluginMessage: { type: 'get-collections' } }, '*');
+  </script>
+</body>
+</html>

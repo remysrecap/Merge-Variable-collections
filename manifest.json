@@ -1,0 +1,12 @@
+{
+  "name": "Merge Variable Collections",
+  "id": "1464392993088422623",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "ui.html",
+"editorType": ["figma"],
+"documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}
